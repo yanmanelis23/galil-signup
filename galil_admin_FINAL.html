@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>גליל עליון — ממשק מנהל</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Frank+Ruhl+Libre:wght@700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --red:#cc1b1b;--red-dark:#8b0f0f;--red-glow:#e63232;
+  --blue:#1e4fa3;--gold:#d4a017;--gold-light:#f0c040;
+  --dark:#060c14;--card:#111820;--card2:#1a2235;
+  --border:#1e2d45;--muted:#94a3b8;
+  --green:#22c55e;--yellow:#eab308;--red2:#ef4444;--text:#f1f5f9;
+}
+body{font-family:'Heebo',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;direction:rtl;}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0d0505,#060c14);}
+.login-card{background:linear-gradient(135deg,#111820,#0d1520);border:1.5px solid var(--border);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center;}
+.login-logo svg{width:64px;height:64px;filter:drop-shadow(0 2px 12px rgba(204,27,27,0.4));}
+.login-title{font-family:'Frank Ruhl Libre',serif;font-size:22px;font-weight:900;margin:12px 0 4px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:24px;letter-spacing:1px;}
+.login-input{width:100%;background:rgba(0,0,0,0.4);border:1.5px solid var(--border);border-radius:10px;padding:13px 16px;color:var(--text);font-family:'Heebo',sans-serif;font-size:18px;text-align:center;letter-spacing:4px;outline:none;transition:border-color 0.2s;}
+.login-input:focus{border-color:var(--red);}
+.login-input.err{border-color:var(--red2);animation:shake 0.3s;}
+.login-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--red),var(--red-glow));color:white;border:none;border-radius:10px;padding:13px;font-family:'Heebo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;touch-action:manipulation;}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(204,27,27,0.5);}
+.login-error{font-size:12px;color:var(--red2);margin-top:8px;min-height:16px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* APP */
+.app{display:none;}
+.app.visible{display:block;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c14,#0d1520);border-bottom:2px solid var(--gold);padding:0 16px;position:sticky;top:0;z-index:100;}
+.header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 0;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-left svg{width:40px;height:40px;}
+.hdr-title{font-family:'Frank Ruhl Libre',serif;font-size:17px;font-weight:900;}
+.hdr-sub{font-size:11px;color:var(--gold-light);letter-spacing:1px;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.role-badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;}
+.role-yan{background:rgba(204,27,27,0.2);border:1px solid var(--red);color:#ff8080;}
+.role-staff{background:rgba(30,79,163,0.2);border:1px solid var(--blue);color:#80a8ff;}
+.logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:7px;padding:5px 10px;font-family:'Heebo',sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;touch-action:manipulation;}
+.logout-btn:hover{border-color:var(--red2);color:var(--red2);}
+
+/* NAV */
+.nav{background:#0a1018;border-bottom:1px solid var(--border);padding:0 16px;}
+.nav-inner{max-width:960px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none;}
+.nav-inner::-webkit-scrollbar{display:none;}
+.ntab{padding:11px 14px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;flex-shrink:0;touch-action:manipulation;}
+.ntab:hover{color:var(--gold);}
+.ntab.active{color:var(--gold-light);border-bottom-color:var(--gold);}
+.ntab.yan-only{color:#ff6060;}
+.ntab.yan-only.active{color:#ff8080;border-bottom-color:var(--red);}
+
+/* CONTENT */
+.content{max-width:960px;margin:0 auto;padding:16px;}
+.panel{display:none;}
+.panel.active{display:block!important;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;text-align:center;}
+.stat-num{font-family:'Frank Ruhl Libre',serif;font-size:34px;font-weight:900;line-height:1;}
+.stat-num.g{color:var(--green);}
+.stat-num.go{color:var(--gold-light);}
+.stat-num.r{color:var(--red-glow);}
+.stat-num.b{color:#60a5fa;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* SECTION TITLE */
+.sec{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+/* TABLE — FIX #17: overflow wrapper for mobile */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;}
+.slot-table{width:100%;border-collapse:collapse;min-width:500px;}
+.slot-table th{text-align:right;font-size:11px;font-weight:700;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:1px;}
+.slot-table td{padding:9px 10px;border-bottom:1px solid rgba(30,45,69,0.5);font-size:13px;vertical-align:middle;}
+.slot-table tr:hover td{background:rgba(255,255,255,0.02);}
+.mini-bar-wrap{width:60px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:6px;}
+.mini-bar{height:100%;border-radius:3px;}
+.bar-g{background:var(--green);}
+.bar-y{background:var(--yellow);}
+.bar-r{background:var(--red-glow);}
+.pill{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;}
+.p-open{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);}
+.p-almost{background:rgba(234,179,8,0.15);color:var(--yellow);border:1px solid rgba(234,179,8,0.3);}
+.p-full{background:rgba(100,100,100,0.15);color:#888;border:1px solid rgba(100,100,100,0.3);}
+.p-min{background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);}
+
+/* BUTTONS */
+.abtn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;font-family:'Heebo',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid;touch-action:manipulation;}
+.abtn-v{background:rgba(30,79,163,0.15);border-color:#1e4fa3;color:#60a5fa;}
+.abtn-v:hover{background:rgba(30,79,163,0.3);}
+.abtn-r{background:rgba(239,68,68,0.1);border-color:#ef4444;color:#f87171;}
+.abtn-r:hover{background:rgba(239,68,68,0.25);}
+.btn-p{background:linear-gradient(135deg,var(--red),var(--red-glow));border:none;border-radius:10px;padding:11px 18px;color:white;font-family:'Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;touch-action:manipulation;}
+.btn-p:hover{transform:translateY(-1px);}
+.btn-b{background:linear-gradient(135deg,var(--blue),#2563c9);border:none;border-radius:10px;padding:11px 18px;color:white;font-family:'Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;}
+.btn-s{background:rgba(255,255,255,0.05);border:1.5px solid var(--border);color:var(--muted);border-radius:10px;padding:11px 18px;font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;touch-action:manipulation;}
+.btn-s:hover{border-color:var(--gold);color:var(--gold);}
+.btn-d{background:rgba(239,68,68,0.1);border:1.5px solid #ef4444;color:#f87171;border-radius:10px;padding:11px 18px;font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;touch-action:manipulation;}
+.btn-d:hover{background:rgba(239,68,68,0.25);}
+
+/* REG LIST */
+.reg-list{background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.reg-hdr{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.reg-hdr-title{font-size:13px;font-weight:700;}
+.reg-hdr-count{font-size:12px;color:var(--muted);}
+.reg-item{padding:9px 14px;border-bottom:1px solid rgba(30,45,69,0.4);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.reg-item:last-child{border-bottom:none;}
+.reg-name{font-size:13px;font-weight:600;}
+.reg-team{font-size:11px;color:var(--muted);}
+.reg-ts{font-size:11px;color:var(--muted);flex-shrink:0;}
+.reg-empty{padding:18px;text-align:center;color:var(--muted);font-size:13px;}
+
+/* SCHEDULE EDITOR */
+.week-editor{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;}
+.day-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;}
+.day-hdr{padding:10px 14px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--border);}
+.day-hdr-title{font-size:13px;font-weight:700;color:var(--gold-light);}
+.day-body{padding:12px 14px;}
+.slot-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.se-inp{background:rgba(0,0,0,0.4);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;}
+.se-inp:focus{border-color:var(--gold);}
+.se-rm{background:transparent;border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;touch-action:manipulation;}
+.se-rm:hover{background:rgba(239,68,68,0.2);}
+.add-slot-btn{background:rgba(255,255,255,0.04);border:1px dashed var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;font-family:'Heebo',sans-serif;font-size:12px;cursor:pointer;width:100%;margin-top:4px;touch-action:manipulation;}
+.add-slot-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* CARD BOXES */
+.cbox{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
+.cbox-danger{background:linear-gradient(135deg,#1a0000,#0d0505);border:1.5px solid rgba(239,68,68,0.3);border-radius:14px;padding:18px;margin-bottom:14px;}
+.cbox-test{background:linear-gradient(135deg,#0a1a0a,#0d200d);border:1.5px solid rgba(34,197,94,0.4);border-radius:14px;padding:18px;margin-bottom:14px;}
+.cbox-title{font-size:14px;font-weight:700;margin-bottom:5px;}
+.cbox-sub{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.sel-inp{background:rgba(0,0,0,0.4);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;}
+.txt-inp{background:rgba(0,0,0,0.4);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;outline:none;direction:rtl;width:100%;}
+.test-btn{background:rgba(34,197,94,0.15);border:1.5px solid var(--green);color:var(--green);border-radius:10px;padding:10px 16px;font-family:'Heebo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;touch-action:manipulation;}
+
+/* MODAL — FIX #18: -webkit-overflow-scrolling for iOS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:linear-gradient(135deg,#0d1520,#111820);border:1.5px solid var(--border);border-radius:18px;padding:22px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.modal-title{font-family:'Frank Ruhl Libre',serif;font-size:17px;font-weight:900;margin-bottom:14px;color:var(--gold-light);}
+.modal-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d1520;border:1.5px solid var(--blue);color:#f1f5f9;padding:11px 18px;border-radius:10px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;text-align:center;min-width:200px;max-width:300px;}
+.toast.show{opacity:1;}
+.toast.ok{background:#052e16;border-color:var(--green);}
+.toast.err{background:#1a0000;border-color:var(--red2);}
+
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="#1e4fa3" stroke="#d4a017" stroke-width="2.5"/>
+        <circle cx="50" cy="42" r="30" fill="#fff" stroke="#d4a017" stroke-width="1.5"/>
+        <circle cx="50" cy="38" r="14" fill="#e07020" stroke="#8b4000" stroke-width="1"/>
+        <path d="M37,38 Q50,32 63,38" fill="none" stroke="#8b4000" stroke-width="1"/>
+        <path d="M37,38 Q50,44 63,38" fill="none" stroke="#8b4000" stroke-width="1"/>
+        <line x1="50" y1="24" x2="50" y2="52" stroke="#8b4000" stroke-width="1"/>
+        <ellipse cx="50" cy="52" rx="16" ry="4" fill="#d4a017"/>
+        <path d="M18,70 Q50,68 82,70 L80,82 Q50,84 20,82 Z" fill="#cc1b1b"/>
+        <text x="50" y="79" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="900" fill="white">Galil Elion</text>
+      </svg>
+    </div>
+    <div class="login-title">ממשק מנהל</div>
+    <div class="login-sub">הפועל גליל עליון • כושר</div>
+    <input class="login-input" id="login-input" type="password" placeholder="••••••••" maxlength="12"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">כניסה</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="hdr-left">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="48" fill="#1e4fa3" stroke="#d4a017" stroke-width="2.5"/>
+          <circle cx="50" cy="42" r="30" fill="#fff" stroke="#d4a017" stroke-width="1.5"/>
+          <circle cx="50" cy="38" r="14" fill="#e07020"/>
+          <ellipse cx="50" cy="52" rx="16" ry="4" fill="#d4a017"/>
+          <path d="M18,70 Q50,68 82,70 L80,82 Q50,84 20,82 Z" fill="#cc1b1b"/>
+        </svg>
+        <div>
+          <div class="hdr-title">גליל עליון — ניהול</div>
+          <div class="hdr-sub" id="hdr-sub">ממשק מנהל</div>
+        </div>
+      </div>
+      <div class="hdr-right">
+        <span class="role-badge" id="role-badge">—</span>
+        <button class="logout-btn" onclick="doLogout()">יציאה</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-inner">
+      <div class="ntab active" onclick="showPanel('dashboard')" data-p="dashboard">📊 סקירה</div>
+      <div class="ntab" onclick="showPanel('registrations')" data-p="registrations">📋 רשימות</div>
+      <div class="ntab" onclick="showPanel('schedule')" data-p="schedule">📅 לוז שבועי</div>
+      <div class="ntab yan-only hidden" onclick="showPanel('admin')" data-p="admin">⚙️ ניהול מלא</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num g" id="s-total">—</div><div class="stat-label">סה״כ רישומים</div></div>
+        <div class="stat-card"><div class="stat-num go" id="s-sess">—</div><div class="stat-label">אימונים מתקיימים</div></div>
+        <div class="stat-card"><div class="stat-num r" id="s-full">—</div><div class="stat-label">Slots מלאים</div></div>
+        <div class="stat-card"><div class="stat-num b" id="s-open">—</div><div class="stat-label">מקומות פנויים</div></div>
+      </div>
+      <div class="sec">סטטוס slots</div>
+      <div class="table-wrap">
+        <table class="slot-table">
+          <thead><tr><th>יום</th><th>שעה</th><th>מאמן</th><th>נרשמו</th><th>סטטוס</th><th>פעולות</th></tr></thead>
+          <tbody id="dash-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REGISTRATIONS -->
+    <div class="panel" id="panel-registrations">
+      <div class="sec">רשימות לפי Slot</div>
+      <div id="reg-wrap"></div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="panel" id="panel-schedule">
+      <div class="sec">עריכת לוז שבועי</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">הגדר ימים ושעות לשבוע הבא. לחץ שמור לאחר עריכה.</p>
+      <div class="week-editor" id="week-editor"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-p" onclick="saveSchedule()">💾 שמור לוז</button>
+        <button class="btn-s" onclick="renderScheduleEditor()">↺ בטל שינויים</button>
+      </div>
+    </div>
+
+    <!-- ADMIN — יאן only -->
+    <div class="panel" id="panel-admin">
+      <div class="sec">ניהול מלא — יאן בלבד</div>
+
+      <!-- TEST MODE -->
+      <div class="cbox-test">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="cbox-title" style="color:var(--green)">🧪 מצב טסט</div>
+            <div class="cbox-sub" style="margin-bottom:0">מבטל חסימת 09:00 — פותח רישום לכל שעה לצורך בדיקה.</div>
+          </div>
+          <button class="test-btn" id="test-btn" onclick="toggleTestMode()">הפעל מצב טסט</button>
+        </div>
+        <div id="test-status" style="display:none;margin-top:10px;font-size:12px;color:var(--green)">
+          ✅ מצב טסט פעיל — פתוח בכל שעה. זכור לכבות אחרי הבדיקה.
+        </div>
+      </div>
+
+      <!-- MANUAL ADD -->
+      <div class="cbox">
+        <div class="cbox-title" style="color:var(--gold-light)">✏️ רישום ידני של שחקן</div>
+        <div class="cbox-sub">הוסף שחקן ל-slot ישירות.</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="m-day" class="sel-inp" style="flex:1;min-width:100px" onchange="fillMSlots()"><option value="">— יום —</option></select>
+            <select id="m-slot" class="sel-inp" style="flex:1;min-width:130px"><option value="">— שעה —</option></select>
+          </div>
+          <input id="m-name" class="txt-inp" type="text" placeholder="שם מלא" maxlength="60">
+          <select id="m-team" class="sel-inp" style="width:100%">
+            <option value="">— קבוצה —</option>
+            <option>נוער על / נוער ארצית</option>
+            <option>נערים א׳</option><option>נערים ב׳</option>
+            <option>ילדים לאומית</option><option>ילדים ב׳</option>
+            <option>ילדים סגל</option><option>נערות</option>
+          </select>
+          <button class="btn-b" onclick="addManualReg()">➕ הוסף רישום ידני</button>
+        </div>
+      </div>
+
+      <!-- REMOVE PLAYER -->
+      <div class="cbox">
+        <div class="cbox-title" style="color:var(--gold-light)">🗑 מחיקת שחקן ספציפי</div>
+        <div class="cbox-sub">בחר slot ← לחץ ✕ ליד השחקן.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <select id="r-day" class="sel-inp" style="flex:1;min-width:100px" onchange="fillRSlots()"><option value="">— יום —</option></select>
+          <select id="r-slot" class="sel-inp" style="flex:1;min-width:130px" onchange="renderRemoveList()"><option value="">— שעה —</option></select>
+        </div>
+        <div id="r-list"></div>
+      </div>
+
+      <!-- RESET BY DAY -->
+      <div class="cbox">
+        <div class="cbox-title" style="color:var(--gold-light)">איפוס לפי יום</div>
+        <div class="cbox-sub">מחיקת כל הרישומים של יום. בלתי הפיך.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="reset-day-btns"></div>
+      </div>
+
+      <!-- RESET ALL -->
+      <div class="cbox-danger">
+        <div class="cbox-title" style="color:#f87171">איפוס שבועי מלא</div>
+        <div class="cbox-sub">מוחק את כל רישומי השבוע. לתחילת שבוע חדש.</div>
+        <button class="btn-d" onclick="confirmResetAll()">🗑 מחק הכל ואפס שבוע</button>
+      </div>
+
+      <!-- EXPORT -->
+      <div class="cbox">
+        <div class="cbox-title" style="color:var(--gold-light)">ייצוא נתונים</div>
+        <div class="cbox-sub">הורד את כל הרישומים כקובץ CSV.</div>
+        <button class="btn-s" onclick="exportCSV()">⬇️ הורד CSV</button>
+      </div>
+
+      <!-- SYSTEM -->
+      <div class="cbox">
+        <div class="cbox-title" style="color:var(--gold-light)">מידע מערכת</div>
+        <div style="font-size:13px;color:var(--muted);line-height:2.2">
+          <div>גרסה: <strong style="color:var(--text)">3.0 FINAL</strong></div>
+          <div>Apps Script: <strong style="color:var(--green)">מחובר ✓</strong></div>
+          <div>משתמש: <strong style="color:var(--text)" id="sys-user">—</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="view-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="view-title">רשימת נרשמים</div>
+    <div id="view-body"></div>
+    <div class="modal-actions">
+      <button class="btn-s abtn" onclick="closeModal()">סגור</button>
+      <button class="btn-d abtn hidden" id="view-reset-btn">🗑 איפוס slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal">
+    <div class="modal-title" id="c-title">אישור</div>
+    <div style="font-size:14px;color:var(--muted);line-height:1.7" id="c-text"></div>
+    <div class="modal-actions">
+      <button class="btn-d abtn" id="c-yes">אישור</button>
+      <button class="btn-s abtn" onclick="closeConfirm()">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycby7h7sTKES74M7YIXk6w3MP3dcEHMI_Z8Q6IM2w5eWa_D4YhyV255QKp-BTYY2mOtkEmA/exec';
+const MAX=15,MIN=5;
+const PASSWORDS={'23245321':'yan','2324':'staff'};
+const ROLES={yan:{label:'יאן — מנהל ראשי',cls:'role-yan'},staff:{label:'צוות',cls:'role-staff'}};
+
+let SCHEDULE={
+  'א':{label:'יום א׳',slots:[{time:'14:00',coach:'יאן',key:'yan'},{time:'15:00',coach:'יאן',key:'yan'},{time:'16:00',coach:'יאן',key:'yan'},{time:'17:00',coach:'יאן',key:'yan'}]},
+  'ב':{label:'יום ב׳',slots:[{time:'15:00',coach:'תו',key:'tav'},{time:'16:00',coach:'תו',key:'tav'},{time:'17:00',coach:'יאן',key:'yan'}]},
+  'ג':{label:'יום ג׳',slots:[{time:'14:00',coach:'תו',key:'tav'},{time:'15:00',coach:'תו',key:'tav'}]},
+  'ד':{label:'יום ד׳',slots:[{time:'16:00',coach:'יאן',key:'yan'},{time:'17:00',coach:'תו',key:'tav'}]},
+  'ה':{label:'יום ה׳',slots:[{time:'14:00',coach:'יאן',key:'yan'},{time:'15:00',coach:'יאן',key:'yan'},{time:'16:00',coach:'תו',key:'tav'}]}
+};
+try{const sv=localStorage.getItem('galil_schedule');if(sv)SCHEDULE=JSON.parse(sv);}catch(e){}
+
+// FIX #14: reset all state on logout
+let S={role:null,counts:{},registrations:{},testMode:false};
+
+function doLogin(){
+  const v=document.getElementById('login-input').value.trim();
+  const role=PASSWORDS[v];
+  if(!role){
+    document.getElementById('login-input').classList.add('err');
+    document.getElementById('login-error').textContent='סיסמה שגויה';
+    setTimeout(()=>document.getElementById('login-input').classList.remove('err'),600);
+    return;
+  }
+  S={role,counts:{},registrations:{},testMode:false}; // FIX #14: fresh state on login
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('app').classList.add('visible');
+  const r=ROLES[role];
+  document.getElementById('role-badge').textContent=r.label;
+  document.getElementById('role-badge').className='role-badge '+r.cls;
+  document.getElementById('hdr-sub').textContent=role==='yan'?'גישה מלאה':'גישת צוות';
+  document.getElementById('sys-user').textContent=r.label;
+  if(role==='yan') document.querySelectorAll('.yan-only').forEach(el=>el.classList.remove('hidden'));
+  loadAll();
+}
+function doLogout(){
+  S={role:null,counts:{},registrations:{},testMode:false};
+  document.getElementById('login-input').value='';
+  document.getElementById('login-error').textContent='';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-wrap').style.display='';
+  // hide yan-only tabs again
+  document.querySelectorAll('.yan-only').forEach(el=>el.classList.add('hidden'));
+  showPanel('dashboard'); // reset to first tab
+}
+
+// FIX #15: handle partial failure separately
+async function loadAll(){
+  let ok1=false,ok2=false;
+  try{
+    const r1=await fetch(SCRIPT_URL+'?action=getSlotCounts').then(r=>r.json());
+    if(r1.success){S.counts=r1.counts||{};ok1=true;}
+  }catch(e){}
+  try{
+    const r2=await fetch(SCRIPT_URL+'?action=getAllRegistrations').then(r=>r.json());
+    if(r2.success){S.registrations=r2.registrations||{};ok2=true;}
+  }catch(e){}
+  if(!ok1&&!ok2) showToast('שגיאה בטעינת נתונים','err');
+  else if(!ok1||!ok2) showToast('חלק מהנתונים לא נטענו','err');
+  renderAll();
+}
+
+function renderAll(){
+  renderStats();renderDash();renderRegLists();
+  renderScheduleEditor();renderResetDayBtns();initManualDays();
+}
+
+function renderStats(){
+  let total=0,sess=0,full=0,open=0;
+  each((d,i,s)=>{const k=d+'_'+i,r=S.counts[k]||0;total+=r;if(r>=MIN)sess++;if(r>=MAX)full++;else open+=(MAX-r);});
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-sess').textContent=sess;
+  document.getElementById('s-full').textContent=full;
+  document.getElementById('s-open').textContent=open;
+}
+
+function renderDash(){
+  const tb=document.getElementById('dash-tbody');
+  tb.innerHTML='';
+  each((d,i,s)=>{
+    const k=d+'_'+i,r=S.counts[k]||0;
+    const pct=Math.min(100,Math.round(r/MAX*100));
+    const full=r>=MAX,almost=r>=12;
+    const barC=full?'bar-r':almost?'bar-y':'bar-g';
+    const pill=full?'<span class="pill p-full">מלא</span>'
+              :r>=MIN?'<span class="pill p-min">מתקיים ✓</span>'
+              :almost?'<span class="pill p-almost">כמעט מלא</span>'
+              :'<span class="pill p-open">פתוח</span>';
+    const tr=document.createElement('tr');
+    // FIX #12: use data attributes instead of inline onclick with name
+    tr.innerHTML=`
+      <td>${esc(SCHEDULE[d].label)}</td>
+      <td style="font-weight:700">${esc(s.time)}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:4px">
+        <span style="width:7px;height:7px;border-radius:50%;background:${s.key==='yan'?'#4e8ef7':'#a855f7'};display:inline-block"></span>${esc(s.coach)}
+      </span></td>
+      <td>${r}/${MAX} <span class="mini-bar-wrap"><span class="mini-bar ${barC}" style="width:${pct}%"></span></span></td>
+      <td>${pill}</td>
+      <td style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="abtn abtn-v" data-action="view" data-k="${k}" data-lbl="${esc(SCHEDULE[d].label+' '+s.time)}">👁 צפה</button>
+        ${S.role==='yan'?`<button class="abtn abtn-r" data-action="resetslot" data-k="${k}" data-lbl="${esc(SCHEDULE[d].label+' '+s.time)}">🗑 אפס</button>`:''}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  // FIX #12: event delegation instead of inline onclick
+  document.getElementById('dash-tbody').onclick = e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const k=btn.dataset.k, lbl=btn.dataset.lbl;
+    if (btn.dataset.action==='view') viewSlot(k,lbl);
+    if (btn.dataset.action==='resetslot') confirmResetSlot(k,lbl);
+  };
+}
+
+function renderRegLists(){
+  const wrap=document.getElementById('reg-wrap');
+  wrap.innerHTML='';
+  each((d,i,s)=>{
+    const k=d+'_'+i,r=S.counts[k]||0,regs=S.registrations[k]||[];
+    const div=document.createElement('div');
+    div.className='reg-list';
+    let body='';
+    if(!regs.length) body='<div class="reg-empty">אין נרשמים</div>';
+    else regs.forEach((reg,j)=>{
+      body+=`<div class="reg-item">
+        <div><div class="reg-name">${j+1}. ${esc(reg.name)}</div><div class="reg-team">${esc(reg.team)}</div></div>
+        <div class="reg-ts">${esc(reg.timestamp||'')}</div>
+      </div>`;
+    });
+    div.innerHTML=`<div class="reg-hdr">
+      <div class="reg-hdr-title">${esc(SCHEDULE[d].label)} | ${esc(s.time)} | ${esc(s.coach)}</div>
+      <div class="reg-hdr-count">${r}/${MAX} ${r>=MIN?'✅':''}</div>
+    </div>${body}`;
+    wrap.appendChild(div);
+  });
+}
+
+function viewSlot(k,label){
+  const regs=S.registrations[k]||[],r=S.counts[k]||0;
+  document.getElementById('view-title').textContent=label+' — '+r+' נרשמים';
+  let html=regs.length
+    ?'<div class="reg-list" style="border:none">'+regs.map((reg,i)=>`
+      <div class="reg-item">
+        <div><div class="reg-name">${i+1}. ${esc(reg.name)}</div><div class="reg-team">${esc(reg.team)}</div></div>
+        <div class="reg-ts">${esc(reg.timestamp||'')}</div>
+      </div>`).join('')+'</div>'
+    :'<div class="reg-empty">אין נרשמים</div>';
+  document.getElementById('view-body').innerHTML=html;
+  const rb=document.getElementById('view-reset-btn');
+  if(S.role==='yan'){rb.classList.remove('hidden');rb.onclick=()=>{closeModal();confirmResetSlot(k,label);};}
+  else rb.classList.add('hidden');
+  document.getElementById('view-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('view-modal').classList.remove('open');}
+
+function renderScheduleEditor(){
+  const c=document.getElementById('week-editor');
+  c.innerHTML='';
+  Object.keys(SCHEDULE).forEach(d=>{
+    const card=document.createElement('div');
+    card.className='day-card';
+    card.innerHTML=`<div class="day-hdr"><div class="day-hdr-title">${esc(SCHEDULE[d].label)}</div></div>
+      <div class="day-body" id="se-${d}"></div>`;
+    c.appendChild(card);
+    renderDayRows(d);
+    const btn=document.createElement('button');
+    btn.className='add-slot-btn';btn.textContent='+ הוסף שעה';
+    btn.onclick=()=>addSlot(d);
+    card.querySelector('.day-body').appendChild(btn);
+  });
+}
+function renderDayRows(d){
+  const body=document.getElementById('se-'+d);
+  body.querySelectorAll('.slot-row').forEach(el=>el.remove());
+  const addBtn=body.querySelector('.add-slot-btn');
+  SCHEDULE[d].slots.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.className='slot-row';
+    row.innerHTML=`
+      <input class="se-inp" type="time" value="${s.time}" style="width:95px"
+        onchange="SCHEDULE['${d}'].slots[${i}].time=this.value">
+      <select class="se-inp" onchange="SCHEDULE['${d}'].slots[${i}].coach=this.value;SCHEDULE['${d}'].slots[${i}].key=this.value==='יאן'?'yan':'tav'">
+        <option ${s.coach==='יאן'?'selected':''}>יאן</option>
+        <option ${s.coach==='תו'?'selected':''}>תו</option>
+      </select>
+      <button class="se-rm" onclick="removeSlot('${d}',${i})">✕ הסר</button>`;
+    body.insertBefore(row,addBtn);
+  });
+}
+function addSlot(d){SCHEDULE[d].slots.push({time:'08:00',coach:'יאן',key:'yan'});renderDayRows(d);}
+function removeSlot(d,i){SCHEDULE[d].slots.splice(i,1);renderDayRows(d);}
+function saveSchedule(){
+  localStorage.setItem('galil_schedule',JSON.stringify(SCHEDULE));
+  showToast('✓ הלוז נשמר','ok');
+  renderAll();
+}
+
+// TEST MODE
+function toggleTestMode(){
+  S.testMode=!S.testMode;
+  localStorage.setItem('galil_test_mode',S.testMode?'1':'');
+  const btn=document.getElementById('test-btn');
+  const st=document.getElementById('test-status');
+  if(S.testMode){
+    btn.textContent='🔴 כבה מצב טסט';
+    btn.style.cssText='background:rgba(239,68,68,0.15);border:1.5px solid #ef4444;color:#f87171;border-radius:10px;padding:10px 16px;font-family:Heebo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;';
+    st.style.display='block';
+    showToast('🧪 מצב טסט פעיל','ok');
+  }else{
+    btn.textContent='הפעל מצב טסט';
+    btn.style.cssText='background:rgba(34,197,94,0.15);border:1.5px solid var(--green);color:var(--green);border-radius:10px;padding:10px 16px;font-family:Heebo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;';
+    st.style.display='none';
+    showToast('מצב טסט כובה','');
+  }
+}
+
+function initManualDays(){
+  ['m-day','r-day'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel)return;
+    sel.innerHTML='<option value="">— יום —</option>';
+    Object.keys(SCHEDULE).forEach(d=>{
+      const o=document.createElement('option');
+      o.value=d;o.textContent=SCHEDULE[d].label;sel.appendChild(o);
+    });
+  });
+}
+function fillMSlots(){
+  const d=document.getElementById('m-day').value;
+  const sel=document.getElementById('m-slot');
+  sel.innerHTML='<option value="">— שעה —</option>';
+  if(!d)return;
+  SCHEDULE[d].slots.forEach((s,i)=>{
+    const o=document.createElement('option');
+    o.value=d+'_'+i;
+    o.textContent=s.time+' — '+s.coach+' ('+(S.counts[d+'_'+i]||0)+'/'+MAX+')';
+    sel.appendChild(o);
+  });
+}
+async function addManualReg(){
+  const k=document.getElementById('m-slot').value;
+  const name=document.getElementById('m-name').value.trim();
+  const team=document.getElementById('m-team').value;
+  if(!k||!name||!team){showToast('נא למלא את כל השדות','err');return;}
+  if(name.length<2){showToast('שם קצר מדי','err');return;}
+  if((S.counts[k]||0)>=MAX){showToast('Slot מלא','err');return;}
+  const[d,idx]=[k.split('_')[0],parseInt(k.split('_')[1])];
+  const s=SCHEDULE[d].slots[idx];
+  const res=await callScript({action:'register',name,team,day:SCHEDULE[d].label,time:s.time,coach:s.coach,slot_key:k});
+  if(res.success){
+    showToast('✓ '+name+' נרשם ידנית','ok');
+    document.getElementById('m-name').value='';
+    document.getElementById('m-team').value='';
+    await loadAll();fillMSlots();
+  }else showToast('⚠️ שגיאה: '+(res.error||''),'err');
+}
+
+function fillRSlots(){
+  const d=document.getElementById('r-day').value;
+  const sel=document.getElementById('r-slot');
+  sel.innerHTML='<option value="">— שעה —</option>';
+  document.getElementById('r-list').innerHTML='';
+  if(!d)return;
+  SCHEDULE[d].slots.forEach((s,i)=>{
+    const o=document.createElement('option');
+    o.value=d+'_'+i;
+    o.textContent=s.time+' — '+s.coach+' ('+(S.counts[d+'_'+i]||0)+'/'+MAX+')';
+    sel.appendChild(o);
+  });
+}
+function renderRemoveList(){
+  const k=document.getElementById('r-slot').value;
+  const c=document.getElementById('r-list');
+  c.innerHTML='';
+  if(!k)return;
+  // FIX #13: read fresh registrations
+  const regs=S.registrations[k]||[];
+  if(!regs.length){c.innerHTML='<div style="font-size:13px;color:var(--muted);padding:8px 0">אין נרשמים</div>';return;}
+  regs.forEach((reg,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:6px;';
+    // FIX #12: store data in dataset, not in onclick attribute
+    const removeBtn=document.createElement('button');
+    removeBtn.style.cssText='background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);color:#f87171;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:Heebo,sans-serif;touch-action:manipulation;';
+    removeBtn.textContent='✕ הסר';
+    removeBtn.dataset.k=k;
+    removeBtn.dataset.idx=i;
+    removeBtn.dataset.name=reg.name;
+    removeBtn.onclick=()=>confirmRemoveReg(k,i,reg.name);
+    row.innerHTML=`<div>
+      <div style="font-size:14px;font-weight:600">${esc(reg.name)}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(reg.team)} · ${esc(reg.timestamp||'')}</div>
+    </div>`;
+    row.appendChild(removeBtn);
+    c.appendChild(row);
+  });
+}
+function confirmRemoveReg(k,idx,name){
+  showConfirm('הסרת שחקן',`למחוק את הרישום של <strong>${esc(name)}</strong>?`,()=>removeReg(k,idx));
+}
+async function removeReg(k,idx){
+  const reg=(S.registrations[k]||[])[idx];
+  if(!reg)return;
+  const res=await callScript({action:'removeReg',slot_key:k,timestamp:reg.timestamp,name:reg.name});
+  if(res.success){showToast('✓ '+reg.name+' הוסר','ok');await loadAll();renderRemoveList();}
+  else showToast('⚠️ שגיאה בהסרה','err');
+}
+
+function renderResetDayBtns(){
+  const c=document.getElementById('reset-day-btns');
+  if(!c)return;
+  c.innerHTML='';
+  Object.keys(SCHEDULE).forEach(d=>{
+    const b=document.createElement('button');
+    b.className='abtn abtn-r';b.style.padding='7px 12px';
+    b.textContent='איפוס '+SCHEDULE[d].label;
+    b.onclick=()=>confirmResetDay(d);
+    c.appendChild(b);
+  });
+}
+
+function confirmResetSlot(k,lbl){showConfirm('איפוס '+lbl,`מחק <strong>כל הרישומים</strong> של ${esc(lbl)}?`,()=>resetSlot(k));}
+function confirmResetDay(d){showConfirm('איפוס '+SCHEDULE[d].label,`מחק <strong>כל הרישומים</strong> של ${esc(SCHEDULE[d].label)}?`,()=>resetDay(d));}
+function confirmResetAll(){showConfirm('⚠️ איפוס שבועי מלא','<strong>מוחק את כל רישומי השבוע.</strong> בלתי הפיך!',()=>resetAllData());}
+function showConfirm(title,text,onYes){
+  document.getElementById('c-title').textContent=title;
+  document.getElementById('c-text').innerHTML=text;
+  document.getElementById('c-yes').onclick=()=>{closeConfirm();onYes();};
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirm-modal').classList.remove('open');}
+
+async function resetSlot(k){await callScript({action:'resetSlot',slot_key:k});showToast('✓ Slot אופס','ok');await loadAll();}
+async function resetDay(d){await callScript({action:'resetDay',slot_keys:SCHEDULE[d].slots.map((s,i)=>d+'_'+i)});showToast('✓ יום אופס','ok');await loadAll();}
+async function resetAllData(){await callScript({action:'resetAll'});showToast('✓ כל הרישומים אופסו','ok');await loadAll();}
+
+function exportCSV(){
+  let csv='יום,שעה,מאמן,שם,קבוצה,זמן רישום\n';
+  each((d,i,s)=>{
+    (S.registrations[d+'_'+i]||[]).forEach(r=>{
+      csv+=[SCHEDULE[d].label,s.time,s.coach,r.name,r.team,r.timestamp||''].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')+'\n';
+    });
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='galil_registrations.csv';a.click();
+  showToast('✓ CSV הורד','ok');
+}
+
+async function callScript(payload){
+  try{
+    const res=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    return await res.json();
+  }catch(e){showToast('⚠️ שגיאת תקשורת','err');return{success:false};}
+}
+
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('active');});
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const tab=document.querySelector(`[data-p="${name}"]`);
+  if(tab)tab.classList.add('active');
+}
+
+function each(fn){Object.keys(SCHEDULE).forEach(d=>SCHEDULE[d].slots.forEach((s,i)=>fn(d,i,s)));}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+let toastT=null;
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  if(toastT)clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),3500);
+}
+</script>
+</body>
+</html>
