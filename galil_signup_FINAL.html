@@ -307,7 +307,7 @@ const MAX = 15;
 const CLOSE_HOUR = 9;
 const REFRESH_MS = 30000;
 
-const SCHEDULE = {
+let SCHEDULE = {
   'א':{label:'יום א׳',slots:[{time:'14:00',coach:'יאן',key:'yan'},{time:'15:00',coach:'יאן',key:'yan'},{time:'16:00',coach:'יאן',key:'yan'},{time:'17:00',coach:'יאן',key:'yan'}]},
   'ב':{label:'יום ב׳',slots:[{time:'15:00',coach:'תו',key:'tav'},{time:'16:00',coach:'תו',key:'tav'},{time:'17:00',coach:'יאן',key:'yan'}]},
   'ג':{label:'יום ג׳',slots:[{time:'14:00',coach:'תו',key:'tav'},{time:'15:00',coach:'תו',key:'tav'}]},
@@ -340,6 +340,15 @@ function fetchWithTimeout(url, options, ms) {
   const timer = setTimeout(() => ctrl.abort(), ms);
   return fetch(url, { ...options, signal: ctrl.signal })
     .finally(() => clearTimeout(timer));
+}
+
+// ── LOAD SCHEDULE FROM SHEETS ──
+async function loadScheduleFromSheets() {
+  try {
+    const res = await fetchWithTimeout(SCRIPT_URL + '?action=getSchedule', { method: 'GET' }, 8000);
+    const data = await res.json();
+    if (data.success && data.schedule) SCHEDULE = data.schedule;
+  } catch(e) {}
 }
 
 // ── LOAD SLOT COUNTS ──
@@ -642,14 +651,18 @@ document.addEventListener('keydown', e=>{
 });
 
 // ── INIT ──
-updateDate();
-checkIfClosed(); // FIX #4: check immediately on load
-updateCountdown();
-setInterval(updateCountdown,1000);
-renderDays();
-renderSlots();
-loadSlotCounts(); // loads from Sheet and hides loading screen
-startRefresh();
+async function init() {
+  updateDate();
+  checkIfClosed();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+  await loadScheduleFromSheets();
+  renderDays();
+  renderSlots();
+  loadSlotCounts();
+  startRefresh();
+}
+init();
 </script>
 </body>
 </html>

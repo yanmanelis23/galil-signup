@@ -396,12 +396,17 @@ function doLogout() {
 // ── LOAD DATA ──
 async function loadAll() {
   try {
-    const [r1,r2] = await Promise.all([
+    const [r1,r2,r3] = await Promise.all([
       fetch(SCRIPT_URL+'?action=getSlotCounts').then(r=>r.json()),
       fetch(SCRIPT_URL+'?action=getAllRegistrations').then(r=>r.json()),
+      fetch(SCRIPT_URL+'?action=getSchedule').then(r=>r.json()),
     ]);
     if (r1.success) S.counts = r1.counts||{};
     if (r2.success) S.registrations = r2.registrations||{};
+    if (r3.success && r3.schedule) {
+      SCHEDULE = r3.schedule;
+      localStorage.setItem('galil_schedule', JSON.stringify(SCHEDULE));
+    }
   } catch(e) { showToast('שגיאה בטעינת נתונים','err'); }
   renderAll();
 }
@@ -537,9 +542,14 @@ function renderDayRows(d) {
 }
 function addSlot(d){SCHEDULE[d].slots.push({time:'08:00',coach:'יאן',key:'yan'});renderDayRows(d);}
 function removeSlot(d,i){SCHEDULE[d].slots.splice(i,1);renderDayRows(d);}
-function saveSchedule(){
-  localStorage.setItem('galil_schedule',JSON.stringify(SCHEDULE));
-  showToast('✓ הלוז נשמר','ok');
+async function saveSchedule() {
+  localStorage.setItem('galil_schedule', JSON.stringify(SCHEDULE));
+  const res = await callScript({ action: 'saveSchedule', schedule: SCHEDULE });
+  if (res.success) {
+    showToast('✓ הלוז נשמר ועודכן בשני הצדדים', 'ok');
+  } else {
+    showToast('⚠️ שגיאה בשמירת הלוז', 'err');
+  }
   renderAll();
 }
 
