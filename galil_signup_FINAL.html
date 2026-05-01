@@ -212,7 +212,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <!-- CLOSED BANNER -->
 <div class="closed-banner" id="closed-banner">
   <div class="closed-title">🔒 הרישום סגור</div>
-  <div class="closed-sub">הרישום נסגר. ניתן להירשם מחר עד השעה 09:00</div>
+  <div class="closed-sub" id="closed-sub">הרישום סגור.</div>
 </div>
 
 <!-- COUNTDOWN -->
@@ -378,9 +378,25 @@ async function submitToSheets(payload) {
 }
 
 function checkIfClosed() {
-  const h = new Date().getHours();
+  const ctrl = SCHEDULE._ctrl || { type: 'time', closeHour: CLOSE_HOUR };
   const testMode = localStorage.getItem('galil_test_mode') === '1';
-  const closed = !testMode && (h >= CLOSE_HOUR);
+  let closed;
+  if (testMode || ctrl.type === 'open') {
+    closed = false;
+  } else if (ctrl.type === 'closed') {
+    closed = true;
+  } else {
+    closed = new Date().getHours() >= (ctrl.closeHour ?? CLOSE_HOUR);
+  }
+  const sub = document.getElementById('closed-sub');
+  if (sub) {
+    if (ctrl.type === 'closed' && !testMode) {
+      sub.textContent = 'הרישום סגור עד הודעה חדשה.';
+    } else {
+      const ch = ctrl.closeHour ?? CLOSE_HOUR;
+      sub.textContent = 'הרישום נסגר. ניתן להירשם מחר עד השעה ' + String(ch).padStart(2,'0') + ':00';
+    }
+  }
   if (closed === state.isClosed) return;
   state.isClosed = closed;
   document.getElementById('closed-banner').classList.toggle('visible', closed);
@@ -390,8 +406,15 @@ function checkIfClosed() {
 }
 
 function updateCountdown() {
+  const ctrl = SCHEDULE._ctrl || { type: 'time', closeHour: CLOSE_HOUR };
+  const cdBar = document.getElementById('countdown-bar');
+  // hide countdown when always-open or always-closed
+  if (ctrl.type === 'open') { cdBar.style.display = 'none'; checkIfClosed(); return; }
+  if (ctrl.type === 'closed') { cdBar.style.display = 'none'; checkIfClosed(); return; }
+  cdBar.style.display = '';
+  const closeHour = ctrl.closeHour ?? CLOSE_HOUR;
   const now = new Date(), t = new Date();
-  t.setHours(CLOSE_HOUR,0,0,0);
+  t.setHours(closeHour,0,0,0);
   if (now >= t) t.setDate(t.getDate()+1);
   const diff = t - now;
   const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
@@ -408,10 +431,11 @@ function updateDate() {
   document.getElementById('today-date').textContent='יום '+days[n.getDay()]+' '+n.getDate()+'/'+(n.getMonth()+1);
 }
 
+function dayKeys(){return Object.keys(SCHEDULE).filter(d=>d!=='_ctrl');}
 function renderDays() {
   const el = document.getElementById('day-tabs');
   el.innerHTML = '';
-  Object.keys(SCHEDULE).forEach(d => {
+  dayKeys().forEach(d => {
     const b = document.createElement('button');
     b.className = 'day-tab' + (d===state.selDay?' active':'');
     b.textContent = SCHEDULE[d].label;

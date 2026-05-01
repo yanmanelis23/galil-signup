@@ -233,18 +233,36 @@ body{font-family:'Heebo',sans-serif;background:#060c14;color:var(--text);min-hei
     <div class="panel" id="panel-admin">
       <div class="sec-title">ניהול מלא — יאן בלבד</div>
 
-      <!-- TEST MODE -->
-      <div class="card-box-test">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div>
-            <div class="card-title" style="color:var(--green)">🧪 מצב טסט</div>
-            <div class="card-sub" style="margin-bottom:0">מבטל חסימת 09:00 — פותח רישום בכל שעה לבדיקה.</div>
-          </div>
-          <button class="test-on-btn" id="test-mode-btn" onclick="toggleTestMode()">הפעל מצב טסט</button>
+      <!-- REGISTRATION CONTROL -->
+      <div class="card-box">
+        <div class="card-title" style="color:var(--gold-light)">⏰ שליטה בפתיחת רישום</div>
+        <div class="card-sub">קבע מתי הרישום פתוח לשחקנים. השינוי מסתנכרן גם לדף השחקנים.</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label id="ctrl-label-time" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:11px 13px;background:rgba(255,255,255,0.03);border-radius:10px;border:1.5px solid #1e2d45;transition:border-color 0.2s">
+            <input type="radio" name="reg-ctrl" value="time" id="ctrl-time" onchange="setCtrlMode('time')" style="accent-color:var(--gold);width:16px;height:16px;flex-shrink:0">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">לפי שעה</div>
+              <div style="font-size:11px;color:var(--muted-b)">רישום נסגר בשעה שמוגדרת מדי יום</div>
+            </div>
+            <input type="number" id="ctrl-hour" min="0" max="23" value="9" class="se-inp" style="width:56px;text-align:center" onchange="updateCtrlHour(this.value)">
+            <span style="font-size:12px;color:var(--muted-b);flex-shrink:0">:00</span>
+          </label>
+          <label id="ctrl-label-open" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:11px 13px;background:rgba(255,255,255,0.03);border-radius:10px;border:1.5px solid #1e2d45;transition:border-color 0.2s">
+            <input type="radio" name="reg-ctrl" value="open" id="ctrl-open" onchange="setCtrlMode('open')" style="accent-color:var(--green);width:16px;height:16px;flex-shrink:0">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--green)">פתוח תמיד</div>
+              <div style="font-size:11px;color:var(--muted-b)">ללא הגבלת שעה — הרישום פתוח עד שינוי ידני</div>
+            </div>
+          </label>
+          <label id="ctrl-label-closed" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:11px 13px;background:rgba(255,255,255,0.03);border-radius:10px;border:1.5px solid #1e2d45;transition:border-color 0.2s">
+            <input type="radio" name="reg-ctrl" value="closed" id="ctrl-closed" onchange="setCtrlMode('closed')" style="accent-color:var(--red2);width:16px;height:16px;flex-shrink:0">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#f87171">סגור תמיד</div>
+              <div style="font-size:11px;color:var(--muted-b)">הרישום סגור לחלוטין עד שינוי ידני</div>
+            </div>
+          </label>
         </div>
-        <div id="test-status" style="display:none;margin-top:10px;font-size:12px;color:var(--green)">
-          ✅ מצב טסט פעיל — פתוח בכל שעה. זכור לכבות אחרי הבדיקה.
-        </div>
+        <button class="btn-primary" style="margin-top:14px;width:100%" onclick="saveSchedule()">💾 שמור הגדרות רישום</button>
       </div>
 
       <!-- MANUAL ADD -->
@@ -417,7 +435,7 @@ async function loadAll() {
 function renderAll() {
   renderStats(); renderDashboard(); renderRegLists();
   renderScheduleEditor(); renderResetDayBtns();
-  initManualDays();
+  initManualDays(); updateCtrlUI();
 }
 
 // ── STATS ──
@@ -512,7 +530,7 @@ function closeModal(){document.getElementById('view-modal').classList.remove('op
 function renderScheduleEditor() {
   const c=document.getElementById('week-editor');
   c.innerHTML='';
-  Object.keys(SCHEDULE).forEach(d=>{
+  dayKeys().forEach(d=>{
     const card=document.createElement('div');
     card.className='day-editor-card';
     card.innerHTML=`<div class="day-editor-header"><div class="day-editor-title">${esc(SCHEDULE[d].label)}</div></div>
@@ -556,6 +574,38 @@ async function saveSchedule() {
   renderAll();
 }
 
+// ── REGISTRATION CONTROL ──
+function setCtrlMode(mode) {
+  if (!SCHEDULE._ctrl) SCHEDULE._ctrl = { type: 'time', closeHour: 9 };
+  SCHEDULE._ctrl.type = mode;
+  updateCtrlUI();
+}
+function updateCtrlHour(val) {
+  const h = Math.max(0, Math.min(23, parseInt(val) || 9));
+  if (!SCHEDULE._ctrl) SCHEDULE._ctrl = { type: 'time', closeHour: 9 };
+  SCHEDULE._ctrl.closeHour = h;
+  document.getElementById('ctrl-hour').value = h;
+}
+function updateCtrlUI() {
+  const ctrl = SCHEDULE._ctrl || { type: 'time', closeHour: 9 };
+  const mode = ctrl.type || 'time';
+  const el = {
+    time: document.getElementById('ctrl-time'),
+    open: document.getElementById('ctrl-open'),
+    closed: document.getElementById('ctrl-closed'),
+  };
+  if (el.time) el.time.checked = mode === 'time';
+  if (el.open) el.open.checked = mode === 'open';
+  if (el.closed) el.closed.checked = mode === 'closed';
+  const hourEl = document.getElementById('ctrl-hour');
+  if (hourEl) hourEl.value = ctrl.closeHour ?? 9;
+  const colors = { time: 'var(--gold)', open: 'var(--green)', closed: 'var(--red2)' };
+  ['time','open','closed'].forEach(m => {
+    const lbl = document.getElementById('ctrl-label-'+m);
+    if (lbl) lbl.style.borderColor = mode === m ? colors[m] : '#1e2d45';
+  });
+}
+
 // ── TEST MODE ──
 function toggleTestMode() {
   S.testMode=!S.testMode;
@@ -581,7 +631,7 @@ function initManualDays() {
     const sel=document.getElementById(id);
     if(!sel) return;
     sel.innerHTML='<option value="">— יום —</option>';
-    Object.keys(SCHEDULE).forEach(d=>{
+    dayKeys().forEach(d=>{
       const o=document.createElement('option');
       o.value=d; o.textContent=SCHEDULE[d].label; sel.appendChild(o);
     });
@@ -666,7 +716,7 @@ function renderResetDayBtns(){
   const c=document.getElementById('reset-day-btns');
   if(!c) return;
   c.innerHTML='';
-  Object.keys(SCHEDULE).forEach(d=>{
+  dayKeys().forEach(d=>{
     const b=document.createElement('button');
     b.className='abtn abtn-reset'; b.style.padding='7px 14px';
     b.textContent='איפוס '+SCHEDULE[d].label;
@@ -723,7 +773,8 @@ function showPanel(name){
 }
 
 // ── UTILS ──
-function eachSlot(fn){Object.keys(SCHEDULE).forEach(d=>SCHEDULE[d].slots.forEach((s,i)=>fn(d,i,s)));}
+function dayKeys(){return Object.keys(SCHEDULE).filter(d=>d!=='_ctrl');}
+function eachSlot(fn){dayKeys().forEach(d=>SCHEDULE[d].slots.forEach((s,i)=>fn(d,i,s)));}
 function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let toastT=null;
 function showToast(msg,type=''){
