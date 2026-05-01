@@ -320,11 +320,9 @@ const state = {
   isSubmitting:false, isClosed:false, refreshTimer:null
 };
 
-// ── FIX #7: pause auto-refresh when user is mid-form ──
 function startRefresh() {
   stopRefresh();
   state.refreshTimer = setInterval(() => {
-    // FIX #8: don't refresh regs while form is open
     if (!document.getElementById('screen-form').classList.contains('hidden')) return;
     if (!document.getElementById('screen-success').classList.contains('hidden')) return;
     loadSlotCounts();
@@ -334,7 +332,6 @@ function stopRefresh() {
   if (state.refreshTimer) { clearInterval(state.refreshTimer); state.refreshTimer = null; }
 }
 
-// ── FETCH WITH TIMEOUT — FIX #9 ──
 function fetchWithTimeout(url, options, ms) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
@@ -342,7 +339,6 @@ function fetchWithTimeout(url, options, ms) {
     .finally(() => clearTimeout(timer));
 }
 
-// ── LOAD SCHEDULE FROM SHEETS ──
 async function loadScheduleFromSheets() {
   try {
     const res = await fetchWithTimeout(SCRIPT_URL + '?action=getSchedule', { method: 'GET' }, 8000);
@@ -351,7 +347,6 @@ async function loadScheduleFromSheets() {
   } catch(e) {}
 }
 
-// ── LOAD SLOT COUNTS ──
 async function loadSlotCounts(manual = false) {
   try {
     const res = await fetchWithTimeout(SCRIPT_URL + '?action=getSlotCounts', { method:'GET' }, 10000);
@@ -369,12 +364,10 @@ async function loadSlotCounts(manual = false) {
     document.getElementById('net-error').classList.add('visible');
     if (manual) showToast('⚠️ שגיאה בטעינה — בדוק אינטרנט');
   } finally {
-    // FIX #1: always hide loading, even on network error
     hideLoading();
   }
 }
 
-// ── SUBMIT ──
 async function submitToSheets(payload) {
   const res = await fetchWithTimeout(SCRIPT_URL, {
     method:'POST',
@@ -384,7 +377,6 @@ async function submitToSheets(payload) {
   return res.json();
 }
 
-// ── CLOSED CHECK — FIX #4: called on init too ──
 function checkIfClosed() {
   const h = new Date().getHours();
   const testMode = localStorage.getItem('galil_test_mode') === '1';
@@ -397,7 +389,6 @@ function checkIfClosed() {
   document.getElementById('main-content').style.pointerEvents = closed ? 'none' : '';
 }
 
-// ── COUNTDOWN ──
 function updateCountdown() {
   const now = new Date(), t = new Date();
   t.setHours(CLOSE_HOUR,0,0,0);
@@ -417,7 +408,6 @@ function updateDate() {
   document.getElementById('today-date').textContent='יום '+days[n.getDay()]+' '+n.getDate()+'/'+(n.getMonth()+1);
 }
 
-// ── RENDER DAYS ──
 function renderDays() {
   const el = document.getElementById('day-tabs');
   el.innerHTML = '';
@@ -430,7 +420,6 @@ function renderDays() {
   });
 }
 
-// ── RENDER SLOTS ──
 function renderSlots() {
   const g = document.getElementById('slots-grid');
   g.innerHTML = '';
@@ -466,14 +455,12 @@ function renderSlots() {
   });
 }
 
-// ── PICK SLOT ──
 function pickSlot(day,idx,slot) {
   if (state.isClosed) { showToast('הרישום סגור. ניתן להירשם מחר עד 09:00'); return; }
   const r = state.regs[day+'_'+idx]||0;
   if (r>=MAX) { showToast('מצטערים, ה-slot הזה התמלא 😔'); renderSlots(); return; }
   state.selSlot = {day,idx,slot};
   renderSlots();
-  // FIX #3: don't use focus() — let user tap the input themselves on iOS
   setTimeout(() => {
     document.getElementById('screen-slots').classList.add('hidden');
     document.getElementById('screen-form').classList.remove('hidden');
@@ -484,7 +471,6 @@ function pickSlot(day,idx,slot) {
   },150);
 }
 
-// ── BACK ──
 function goBack() {
   state.selSlot=null;
   clearErrors();
@@ -495,7 +481,6 @@ function goBack() {
   renderSlots();
 }
 
-// ── VALIDATE ──
 function validateForm() {
   clearErrors();
   let valid=true;
@@ -518,7 +503,6 @@ function clearErrors() {
   ['err-name','err-team'].forEach(id=>document.getElementById(id).classList.remove('visible'));
 }
 
-// ── SUBMIT ──
 async function submitReg() {
   if (state.isSubmitting) return;
   if (state.isClosed) { showToast('הרישום סגור'); return; }
@@ -536,7 +520,7 @@ async function submitReg() {
   }
 
   state.isSubmitting = true;
-  stopRefresh(); // FIX #7: stop refresh during submit
+  stopRefresh();
   const btn = document.getElementById('submit-btn');
   const label = document.getElementById('submit-label');
   btn.disabled = true;
@@ -562,7 +546,6 @@ async function submitReg() {
       throw new Error(result.error||'שגיאה לא ידועה');
     }
   } catch(e) {
-    // FIX #10: more specific error message
     const msg = navigator.onLine
       ? '⚠️ שגיאה בשליחה. נסה שוב.'
       : '⚠️ אין חיבור לאינטרנט. בדוק WiFi ונסה שוב.';
@@ -571,11 +554,10 @@ async function submitReg() {
     label.textContent='✓ אישור רישום לאימון';
   } finally {
     state.isSubmitting=false;
-    startRefresh(); // resume refresh
+    startRefresh();
   }
 }
 
-// ── SUCCESS ──
 function showSuccess(name,team,day,slot,k) {
   document.getElementById('screen-form').classList.add('hidden');
   document.getElementById('screen-success').classList.remove('hidden');
@@ -592,7 +574,6 @@ function showSuccess(name,team,day,slot,k) {
     <div class="success-row"><span>שעת רישום</span><span>${t}</span></div>`;
 }
 
-// ── RESET ──
 function doReset() {
   state.selSlot=null; state.isSubmitting=false;
   document.getElementById('input-name').value='';
@@ -612,7 +593,6 @@ function doReset() {
   startRefresh();
 }
 
-// ── STEPS ──
 function stepId(n){return n===1?'step1':n===2?'step2-ind':'step3-ind';}
 function setStep(n,mode){
   const el=document.getElementById(stepId(n));
@@ -632,7 +612,6 @@ function hideLoading(){
   el.classList.add('hidden');
 }
 
-// ── TOAST ──
 let toastT=null;
 function showToast(msg,ok=false){
   const t=document.getElementById('toast');
@@ -641,16 +620,13 @@ function showToast(msg,ok=false){
   toastT=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-// ── SECURITY ──
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function sanitize(s){return s.replace(/[<>"'\\]/g,'').trim().slice(0,60);}
 
-// ── KEYBOARD ──
 document.addEventListener('keydown', e=>{
   if (e.key==='Enter'&&e.target.id==='input-name'){e.preventDefault();submitReg();}
 });
 
-// ── INIT ──
 async function init() {
   updateDate();
   checkIfClosed();
