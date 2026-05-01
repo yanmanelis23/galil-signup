@@ -697,11 +697,11 @@ function exportCSV(){
   let csv='יום,שעה,מאמן,שם,קבוצה,זמן רישום\n';
   eachSlot((d,i,s)=>{
     (S.registrations[d+'_'+i]||[]).forEach(r=>{
-      csv+=[SCHEDULE[d].label,s.time,s.coach,r.name,r.team,r.timestamp||''].join(',')+'\n';
+      csv+=[SCHEDULE[d].label,s.time,s.coach,r.name,r.team,r.timestamp||''].join(',')+' \n';
     });
   });
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'}));
   a.download='galil_registrations.csv'; a.click();
   showToast('✓ CSV הורד','ok');
 }
