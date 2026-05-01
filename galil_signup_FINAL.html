@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -305,7 +305,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7h7sTKES74M7YIXk6w3MP3dcEHMI_Z8Q6IM2w5eWa_D4YhyV255QKp-BTYY2mOtkEmA/exec';
 const MAX = 15;
 const CLOSE_HOUR = 9;
-const TEST_MODE = true; // ← שנה ל-false לפני השקה לשחקנים
 const REFRESH_MS = 30000;
 
 const SCHEDULE = {
@@ -379,7 +378,8 @@ async function submitToSheets(payload) {
 // ── CLOSED CHECK — FIX #4: called on init too ──
 function checkIfClosed() {
   const h = new Date().getHours();
-  const closed = !TEST_MODE && (h >= CLOSE_HOUR);
+  const testMode = localStorage.getItem('galil_test_mode') === '1';
+  const closed = !testMode && (h >= CLOSE_HOUR);
   if (closed === state.isClosed) return;
   state.isClosed = closed;
   document.getElementById('closed-banner').classList.toggle('visible', closed);
