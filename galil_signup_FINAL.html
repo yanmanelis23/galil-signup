@@ -154,6 +154,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .toast.show{opacity:1;}
 .toast.ok{background:#052e16;border-color:var(--green);}
 
+/* MY REGISTRATION CARD */
+.my-reg-wrap{padding:12px 16px 0;max-width:480px;margin:0 auto;position:relative;z-index:1;}
+.my-reg-card{background:linear-gradient(135deg,#091a0f,#0d2414);border:1.5px solid #22c55e55;border-radius:16px;padding:14px 16px;position:relative;overflow:hidden;}
+.my-reg-card::before{content:'';position:absolute;top:0;right:0;left:0;height:3px;background:linear-gradient(90deg,var(--green),#16a34a,var(--green));}
+.my-reg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.my-reg-title{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;}
+.my-reg-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:livepulse 2s infinite;}
+.my-reg-details{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+.my-reg-item{background:rgba(0,0,0,0.3);border-radius:8px;padding:7px 10px;}
+.my-reg-label{font-size:9px;color:#86efac;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px;}
+.my-reg-value{font-size:14px;font-weight:700;color:var(--off-white);}
+.my-reg-actions{display:flex;gap:8px;}
+.cancel-reg-btn{flex:1;background:rgba(204,27,27,0.12);border:1.5px solid var(--red-dark);color:#fca5a5;border-radius:10px;padding:9px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:5px;}
+.cancel-reg-btn:active{background:rgba(204,27,27,0.25);}
+.wa-notify-btn{flex:1;background:rgba(37,211,102,0.1);border:1.5px solid rgba(37,211,102,0.35);color:#4ade80;border-radius:10px;padding:9px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;}
+.wa-notify-btn:active{background:rgba(37,211,102,0.2);}
+
 .hidden{display:none!important;}
 </style>
 </head>
@@ -229,6 +246,25 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <span>נתונים בזמן אמת</span>
   <span id="last-refresh-text"></span>
   <button class="refresh-btn" onclick="loadSlotCounts(true)">↻ רענן</button>
+</div>
+
+<!-- MY REGISTRATION -->
+<div class="my-reg-wrap" id="my-reg-wrap" style="display:none">
+  <div class="my-reg-card">
+    <div class="my-reg-header">
+      <div class="my-reg-title"><span class="my-reg-dot"></span>הרישום שלך השבוע</div>
+    </div>
+    <div class="my-reg-details">
+      <div class="my-reg-item"><div class="my-reg-label">יום</div><div class="my-reg-value" id="mreg-day">—</div></div>
+      <div class="my-reg-item"><div class="my-reg-label">שעה</div><div class="my-reg-value" id="mreg-time">—</div></div>
+      <div class="my-reg-item"><div class="my-reg-label">מאמן</div><div class="my-reg-value" id="mreg-coach">—</div></div>
+      <div class="my-reg-item"><div class="my-reg-label">שם</div><div class="my-reg-value" id="mreg-name">—</div></div>
+    </div>
+    <div class="my-reg-actions">
+      <button class="cancel-reg-btn" onclick="cancelReg()">✕ ביטול רישום</button>
+      <a class="wa-notify-btn" id="wa-notify-link" href="#" target="_blank">💬 הודע למאמן</a>
+    </div>
+  </div>
 </div>
 
 <!-- MAIN -->
@@ -583,6 +619,7 @@ async function submitReg() {
 }
 
 function showSuccess(name,team,day,slot,k) {
+  saveMyReg(name, team, day, slot, k);
   document.getElementById('screen-form').classList.add('hidden');
   document.getElementById('screen-success').classList.remove('hidden');
   setStep(2,'done'); setStep(3,'active');
@@ -644,6 +681,72 @@ function showToast(msg,ok=false){
   toastT=setTimeout(()=>t.classList.remove('show'),3500);
 }
 
+// ── MY REGISTRATION ──
+const MY_REG_KEY = 'galil_my_reg_v2';
+const COACH_PHONES = { 'יאן': '972547648996', 'תו': '972500000000' };
+
+function saveMyReg(name, team, day, slot, k) {
+  const data = {
+    name, team,
+    day, dayLabel: SCHEDULE[day].label,
+    time: slot.time, coach: slot.coach,
+    slot_key: k,
+    saved: Date.now()
+  };
+  localStorage.setItem(MY_REG_KEY, JSON.stringify(data));
+  showMyReg(data);
+}
+
+function loadMyReg() {
+  try {
+    const raw = localStorage.getItem(MY_REG_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Date.now() - data.saved > 7 * 86400 * 1000) {
+      localStorage.removeItem(MY_REG_KEY); return;
+    }
+    showMyReg(data);
+  } catch(e) { localStorage.removeItem(MY_REG_KEY); }
+}
+
+function showMyReg(data) {
+  document.getElementById('mreg-day').textContent   = data.dayLabel;
+  document.getElementById('mreg-time').textContent  = data.time;
+  document.getElementById('mreg-coach').textContent = data.coach;
+  document.getElementById('mreg-name').textContent  = data.name;
+  const phone = COACH_PHONES[data.coach] || COACH_PHONES['יאן'];
+  const msg = encodeURIComponent(
+    `שלום ${data.coach}, לא מגיע לאימון ב${data.dayLabel} שעה ${data.time}.\n— ${data.name}`
+  );
+  document.getElementById('wa-notify-link').href = `https://wa.me/${phone}?text=${msg}`;
+  document.getElementById('my-reg-wrap').style.display = '';
+}
+
+async function cancelReg() {
+  const raw = localStorage.getItem(MY_REG_KEY);
+  if (!raw) return;
+  const data = JSON.parse(raw);
+  if (!confirm(`לבטל את הרישום ל${data.dayLabel} ${data.time}?`)) return;
+  try {
+    const res = await fetchWithTimeout(SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({ action:'removeReg', name: data.name, slot_key: data.slot_key })
+    }, 10000);
+    const result = await res.json();
+    if (result.success || result.removed === 0) {
+      localStorage.removeItem(MY_REG_KEY);
+      document.getElementById('my-reg-wrap').style.display = 'none';
+      showToast('✓ הרישום בוטל', true);
+      loadSlotCounts(false);
+    } else {
+      showToast('⚠️ שגיאה בביטול — נסה שוב');
+    }
+  } catch(e) {
+    showToast('⚠️ בעיית חיבור — נסה שוב');
+  }
+}
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function sanitize(s){return s.replace(/[<>"'\\]/g,'').trim().slice(0,60);}
 
@@ -652,6 +755,7 @@ document.addEventListener('keydown', e=>{
 });
 
 async function init() {
+  loadMyReg();
   updateDate();
   checkIfClosed();
   updateCountdown();
