@@ -426,7 +426,8 @@ async function loadAll() {
     if (r1.success) S.counts = r1.counts||{};
     if (r2.success) S.registrations = r2.registrations||{};
     if (r3.success && r3.schedule) {
-      SCHEDULE = r3.schedule;
+      const fetched = r3.schedule;
+      Object.keys(fetched).forEach(k => { SCHEDULE[k] = fetched[k]; });
       localStorage.setItem('galil_schedule', JSON.stringify(SCHEDULE));
     }
   } catch(e) { showToast('שגיאה בטעינת נתונים','err'); }

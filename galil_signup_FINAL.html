@@ -380,7 +380,10 @@ async function loadScheduleFromSheets() {
   try {
     const res = await fetchWithTimeout(SCRIPT_URL + '?action=getSchedule', { method: 'GET' }, 8000);
     const data = await res.json();
-    if (data.success && data.schedule) SCHEDULE = data.schedule;
+    if (data.success && data.schedule) {
+      const fetched = data.schedule;
+      Object.keys(fetched).forEach(k => { SCHEDULE[k] = fetched[k]; });
+    }
   } catch(e) {}
 }
 
