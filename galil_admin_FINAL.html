@@ -381,7 +381,7 @@ let SCHEDULE = {
   'ו':{ label:'יום ו׳', slots:[{time:'09:00',coach:'תו',key:'tav'},{time:'10:00',coach:'תו',key:'tav'},{time:'11:00',coach:'תו',key:'tav'}]},
 };
 
-const saved = localStorage.getItem('galil_schedule');
+const saved = localStorage.getItem('galil_schedule_v2');
 if (saved) { try { SCHEDULE = JSON.parse(saved); } catch(e){} }
 
 let S = { role:null, counts:{}, registrations:{}, testMode:false };
@@ -428,7 +428,7 @@ async function loadAll() {
     if (r3.success && r3.schedule) {
       const fetched = r3.schedule;
       Object.keys(fetched).forEach(k => { SCHEDULE[k] = fetched[k]; });
-      localStorage.setItem('galil_schedule', JSON.stringify(SCHEDULE));
+      localStorage.setItem('galil_schedule_v2', JSON.stringify(SCHEDULE));
     }
   } catch(e) { showToast('שגיאה בטעינת נתונים','err'); }
   renderAll();
@@ -566,7 +566,7 @@ function renderDayRows(d) {
 function addSlot(d){SCHEDULE[d].slots.push({time:'08:00',coach:'יאן',key:'yan'});renderDayRows(d);}
 function removeSlot(d,i){SCHEDULE[d].slots.splice(i,1);renderDayRows(d);}
 async function saveSchedule() {
-  localStorage.setItem('galil_schedule', JSON.stringify(SCHEDULE));
+  localStorage.setItem('galil_schedule_v2', JSON.stringify(SCHEDULE));
   const res = await callScript({ action: 'saveSchedule', schedule: SCHEDULE });
   if (res.success) {
     showToast('✓ הלוז נשמר ועודכן בשני הצדדים', 'ok');
