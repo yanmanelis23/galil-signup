@@ -133,6 +133,47 @@ body{font-family:'Heebo',sans-serif;background:#060c14;color:var(--text);min-hei
 @keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important;}
 .panel.active{display:block!important;}
+
+/* ── ANALYTICS TAB ── */
+.an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;}
+.an-card{background:var(--card);border:1.5px solid var(--border-b);border-radius:14px;padding:16px;text-align:center;position:relative;overflow:hidden;}
+.an-card::before{content:'';position:absolute;top:0;right:0;left:0;height:3px;}
+.an-card.c-red::before{background:var(--red-glow);}
+.an-card.c-gold::before{background:var(--gold);}
+.an-card.c-green::before{background:var(--green);}
+.an-card.c-blue::before{background:#60a5fa;}
+.an-card.c-purple::before{background:#a855f7;}
+.an-num{font-family:'Frank Ruhl Libre',serif;font-size:34px;font-weight:900;line-height:1;}
+.an-label{font-size:10px;color:var(--muted-b);margin-top:4px;text-transform:uppercase;letter-spacing:0.8px;}
+.an-section{background:var(--card);border:1.5px solid var(--border-b);border-radius:14px;padding:18px;margin-bottom:16px;}
+.an-section-title{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.an-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#1e2d45,transparent);}
+.an-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.an-bar-label{font-size:12px;color:var(--text);min-width:150px;text-align:right;flex-shrink:0;}
+.an-bar-track{flex:1;height:12px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;}
+.an-bar-fill{height:100%;border-radius:6px;transition:width 0.6s cubic-bezier(.4,0,.2,1);}
+.an-bar-val{font-size:11px;color:var(--muted-b);min-width:28px;text-align:left;flex-shrink:0;}
+.an-player-table{width:100%;border-collapse:collapse;}
+.an-player-table th{text-align:right;font-size:10px;font-weight:700;color:var(--muted-b);padding:6px 10px;border-bottom:1px solid #1e2d45;text-transform:uppercase;letter-spacing:0.8px;}
+.an-player-table td{padding:9px 10px;border-bottom:1px solid rgba(30,45,69,0.4);font-size:13px;vertical-align:middle;}
+.an-player-table tr:last-child td{border-bottom:none;}
+.an-player-table tr:hover td{background:rgba(255,255,255,0.02);}
+.sessions-badge{display:inline-block;background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;}
+.sessions-badge.s2{background:rgba(212,160,23,0.15);color:var(--gold-light);border-color:rgba(212,160,23,0.3);}
+.sessions-badge.s3{background:rgba(204,27,27,0.15);color:#f87171;border-color:rgba(204,27,27,0.3);}
+.medal{font-size:15px;}
+.an-time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.an-time-card{background:rgba(255,255,255,0.03);border:1px solid #1e2d45;border-radius:10px;padding:12px;text-align:center;}
+.an-time-num{font-size:22px;font-weight:900;color:var(--gold-light);}
+.an-time-sub{font-size:10px;color:var(--muted-b);margin-top:2px;}
+.an-slot-heatmap{display:grid;gap:8px;}
+.an-slot-row{display:flex;align-items:center;gap:10px;}
+.an-slot-label{font-size:12px;min-width:140px;text-align:right;color:var(--text);}
+.an-slot-bar{flex:1;height:22px;background:rgba(255,255,255,0.05);border-radius:6px;overflow:hidden;position:relative;}
+.an-slot-bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:700;color:white;transition:width 0.6s;}
+.an-slot-count{font-size:11px;color:var(--muted-b);min-width:35px;text-align:left;}
+.an-two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:600px){.an-two-col{grid-template-columns:1fr;}.an-bar-label{min-width:110px;font-size:11px;}}
 </style>
 </head>
 <body>
@@ -191,6 +232,7 @@ body{font-family:'Heebo',sans-serif;background:#060c14;color:var(--text);min-hei
       <div class="nav-tab active" onclick="showPanel('dashboard')" data-panel="dashboard">📊 סקירה</div>
       <div class="nav-tab" onclick="showPanel('registrations')" data-panel="registrations">📋 רשימות</div>
       <div class="nav-tab" onclick="showPanel('schedule')" data-panel="schedule">📅 לוז שבועי</div>
+      <div class="nav-tab" onclick="showPanel('analytics')" data-panel="analytics">📈 ניתוח שבועי</div>
       <div class="nav-tab yan-only hidden" onclick="showPanel('admin')" data-panel="admin">⚙️ ניהול מלא</div>
     </div>
   </div>
@@ -226,6 +268,37 @@ body{font-family:'Heebo',sans-serif;background:#060c14;color:var(--text);min-hei
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn-primary" onclick="saveSchedule()">💾 שמור לוז</button>
         <button class="btn-secondary" onclick="renderScheduleEditor()">↺ בטל שינויים</button>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="panel" id="panel-analytics">
+      <div class="an-grid" id="an-kpis"></div>
+      <div class="an-two-col">
+        <div>
+          <div class="an-section">
+            <div class="an-section-title">🏆 שחקנים שבאו יותר מפעם אחת</div>
+            <div id="an-multi"></div>
+          </div>
+          <div class="an-section">
+            <div class="an-section-title">⏰ מתי שחקנים נרשמים?</div>
+            <div class="an-time-grid" id="an-regtime"></div>
+          </div>
+        </div>
+        <div>
+          <div class="an-section">
+            <div class="an-section-title">👕 קבוצות מובילות</div>
+            <div id="an-teams"></div>
+          </div>
+          <div class="an-section">
+            <div class="an-section-title">🔥 עומס לפי אימון</div>
+            <div class="an-slot-heatmap" id="an-heatmap"></div>
+          </div>
+        </div>
+      </div>
+      <div class="an-section">
+        <div class="an-section-title">👤 כל השחקנים השבוע</div>
+        <div id="an-allplayers"></div>
       </div>
     </div>
 
@@ -437,7 +510,7 @@ async function loadAll() {
 function renderAll() {
   renderStats(); renderDashboard(); renderRegLists();
   renderScheduleEditor(); renderResetDayBtns();
-  initManualDays(); updateCtrlUI();
+  initManualDays(); updateCtrlUI(); renderAnalytics();
 }
 
 // ── STATS ──
@@ -777,6 +850,182 @@ function showPanel(name){
 // ── UTILS ──
 function dayKeys(){return Object.keys(SCHEDULE).filter(d=>d!=='_ctrl');}
 function eachSlot(fn){dayKeys().forEach(d=>SCHEDULE[d].slots.forEach((s,i)=>fn(d,i,s)));}
+// ── ANALYTICS ──
+function renderAnalytics() {
+  // ── collect all registrations flat ──
+  const allRegs = []; // {name, team, slot_key, day, time, coach, ts}
+  eachSlot((d, i, s) => {
+    const k = d + '_' + i;
+    const regs = S.registrations[k] || [];
+    regs.forEach(r => allRegs.push({
+      name: r.name, team: r.team, slot_key: k,
+      day: d, dayLabel: SCHEDULE[d].label, time: s.time, coach: s.coach,
+      ts: r.timestamp || ''
+    }));
+  });
+
+  // ── unique players per slot (deduplicate same-name same-slot) ──
+  const seenPerSlot = {};
+  const cleanRegs = allRegs.filter(r => {
+    const key = r.slot_key + '|' + r.name;
+    if (seenPerSlot[key]) return false;
+    seenPerSlot[key] = true; return true;
+  });
+
+  // ── total unique players ──
+  const uniqueNames = new Set(cleanRegs.map(r => r.name));
+
+  // ── players per session count ──
+  const perSession = {};
+  cleanRegs.forEach(r => { perSession[r.slot_key] = (perSession[r.slot_key] || 0) + 1; });
+
+  // ── multi-session players ──
+  const playerSessions = {};
+  cleanRegs.forEach(r => {
+    if (!playerSessions[r.name]) playerSessions[r.name] = { sessions: new Set(), teams: new Set(), days: new Set(), coach: new Set() };
+    playerSessions[r.name].sessions.add(r.slot_key);
+    playerSessions[r.name].teams.add(r.team);
+    playerSessions[r.name].days.add(r.dayLabel);
+    playerSessions[r.name].coach.add(r.coach);
+  });
+  const multiPlayers = Object.entries(playerSessions)
+    .filter(([, v]) => v.sessions.size >= 2)
+    .sort((a, b) => b[1].sessions.size - a[1].sessions.size);
+
+  // ── team counts ──
+  const teamMap = {};
+  cleanRegs.forEach(r => {
+    if (!teamMap[r.team]) teamMap[r.team] = new Set();
+    teamMap[r.team].add(r.name);
+  });
+  const teams = Object.entries(teamMap).sort((a, b) => b[1].size - a[1].size);
+
+  // ── registration time analysis ──
+  let morning = 0, afternoon = 0, evening = 0;
+  allRegs.forEach(r => {
+    if (!r.ts) return;
+    try {
+      const h = new Date(r.ts).getUTCHours() + 3; // Israel time ~UTC+3
+      if (h >= 5 && h < 12) morning++;
+      else if (h >= 12 && h < 17) afternoon++;
+      else evening++;
+    } catch(e) {}
+  });
+
+  // ── KPIs ──
+  const totalRegs = cleanRegs.length;
+  const activeSlots = Object.values(perSession).filter(v => v >= MIN).length;
+  document.getElementById('an-kpis').innerHTML = `
+    <div class="an-card c-green"><div class="an-num" style="color:var(--green)">${totalRegs}</div><div class="an-label">רישומים תקינים</div></div>
+    <div class="an-card c-blue"><div class="an-num" style="color:#60a5fa">${uniqueNames.size}</div><div class="an-label">שחקנים ייחודיים</div></div>
+    <div class="an-card c-gold"><div class="an-num" style="color:var(--gold-light)">${multiPlayers.length}</div><div class="an-label">באו 2+ פעמים</div></div>
+    <div class="an-card c-purple"><div class="an-num" style="color:#a855f7">${teams.length}</div><div class="an-label">קבוצות שונות</div></div>
+    <div class="an-card c-red"><div class="an-num" style="color:var(--red-glow)">${activeSlots}</div><div class="an-label">אימונים מתקיימים</div></div>
+  `;
+
+  // ── Multi players table ──
+  const medals = ['🥇','🥈','🥉'];
+  const teamColors = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa','#f472b6','#2dd4bf'];
+  let multiHtml = '';
+  if (multiPlayers.length === 0) {
+    multiHtml = '<div style="text-align:center;color:var(--muted-b);font-size:13px;padding:10px">אין שחקנים שבאו יותר מפעם אחת השבוע</div>';
+  } else {
+    multiHtml = '<table class="an-player-table"><thead><tr><th></th><th>שם</th><th>אימונים</th><th>ימים</th><th>מאמן</th></tr></thead><tbody>';
+    multiPlayers.forEach(([name, v], i) => {
+      const n = v.sessions.size;
+      const badgeCls = n >= 3 ? 's3' : n === 2 ? 's2' : '';
+      const dayStr = [...v.days].join(', ');
+      const coachStr = [...v.coach].join('+');
+      const medal = medals[i] || `<span style="color:var(--muted-b);font-size:12px">${i+1}</span>`;
+      multiHtml += `<tr>
+        <td style="font-size:16px">${medal}</td>
+        <td style="font-weight:700">${esc(name)}</td>
+        <td><span class="sessions-badge ${badgeCls}">${n} אימונים</span></td>
+        <td style="font-size:11px;color:var(--muted-b)">${esc(dayStr)}</td>
+        <td style="font-size:11px;color:var(--muted-b)">${esc(coachStr)}</td>
+      </tr>`;
+    });
+    multiHtml += '</tbody></table>';
+  }
+  document.getElementById('an-multi').innerHTML = multiHtml;
+
+  // ── Teams bars ──
+  const maxTeam = teams[0] ? teams[0][1].size : 1;
+  const teamBarColors = ['#cc1b1b','#d4a017','#22c55e','#60a5fa','#a855f7','#ec4899','#14b8a6','#f97316'];
+  let teamsHtml = '';
+  teams.forEach(([team, players], i) => {
+    const pct = Math.round(players.size / maxTeam * 100);
+    const col = teamBarColors[i % teamBarColors.length];
+    teamsHtml += `<div class="an-bar-row">
+      <div class="an-bar-label">${esc(team)}</div>
+      <div class="an-bar-track"><div class="an-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+      <div class="an-bar-val">${players.size}</div>
+    </div>`;
+  });
+  document.getElementById('an-teams').innerHTML = teamsHtml || '<div style="color:var(--muted-b);font-size:13px">אין נתונים</div>';
+
+  // ── Registration time ──
+  const total_ts = morning + afternoon + evening || 1;
+  document.getElementById('an-regtime').innerHTML = `
+    <div class="an-time-card">
+      <div class="an-time-num" style="color:#fbbf24">${morning}</div>
+      <div class="an-time-sub">☀️ בוקר (5-12)</div>
+      <div style="font-size:10px;color:var(--muted-b);margin-top:3px">${Math.round(morning/total_ts*100)}%</div>
+    </div>
+    <div class="an-time-card">
+      <div class="an-time-num" style="color:#f97316">${afternoon}</div>
+      <div class="an-time-sub">🌤 צהריים (12-17)</div>
+      <div style="font-size:10px;color:var(--muted-b);margin-top:3px">${Math.round(afternoon/total_ts*100)}%</div>
+    </div>
+    <div class="an-time-card">
+      <div class="an-time-num" style="color:#818cf8">${evening}</div>
+      <div class="an-time-sub">🌙 ערב (17+)</div>
+      <div style="font-size:10px;color:var(--muted-b);margin-top:3px">${Math.round(evening/total_ts*100)}%</div>
+    </div>
+  `;
+
+  // ── Heatmap ──
+  const maxSlot = Math.max(...Object.values(perSession), 1);
+  let heatHtml = '';
+  eachSlot((d, i, s) => {
+    const k = d + '_' + i;
+    const count = perSession[k] || 0;
+    const pct = Math.round(count / maxSlot * 100);
+    const col = count >= 12 ? '#cc1b1b' : count >= 8 ? '#d4a017' : count >= MIN ? '#22c55e' : '#1e2d45';
+    const label = `${SCHEDULE[d].label} ${s.time}`;
+    const status = count >= MAX ? '🔴 מלא' : count >= MIN ? '✅' : count > 0 ? '⚠️' : '—';
+    heatHtml += `<div class="an-slot-row">
+      <div class="an-slot-label">${esc(label)} <span style="font-size:10px;color:var(--muted-b)">${esc(s.coach)}</span></div>
+      <div class="an-slot-bar"><div class="an-slot-bar-fill" style="width:${pct}%;background:${col}">${count > 2 ? count : ''}</div></div>
+      <div class="an-slot-count">${count}/${MAX} ${status}</div>
+    </div>`;
+  });
+  document.getElementById('an-heatmap').innerHTML = heatHtml || '<div style="color:var(--muted-b);font-size:13px">אין נתונים</div>';
+
+  // ── All players sorted alphabetically ──
+  const allByName = {};
+  cleanRegs.forEach(r => {
+    if (!allByName[r.name]) allByName[r.name] = { team: r.team, count: 0, days: new Set(), coach: new Set() };
+    allByName[r.name].count++;
+    allByName[r.name].days.add(r.dayLabel);
+    allByName[r.name].coach.add(r.coach);
+  });
+  const sorted = Object.entries(allByName).sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0], 'he'));
+  let allHtml = '<table class="an-player-table"><thead><tr><th>#</th><th>שם</th><th>קבוצה</th><th>אימונים</th><th>מאמן</th></tr></thead><tbody>';
+  sorted.forEach(([name, v], i) => {
+    const badgeCls = v.count >= 3 ? 's3' : v.count >= 2 ? 's2' : '';
+    allHtml += `<tr>
+      <td style="color:var(--muted-b);font-size:11px">${i+1}</td>
+      <td style="font-weight:700">${esc(name)}</td>
+      <td style="font-size:11px;color:var(--muted-b)">${esc(v.team)}</td>
+      <td>${v.count > 1 ? `<span class="sessions-badge ${badgeCls}">${v.count}</span>` : '<span style="color:var(--muted-b);font-size:11px">1</span>'}</td>
+      <td style="font-size:11px;color:var(--muted-b)">${esc([...v.coach].join('+'))}</td>
+    </tr>`;
+  });
+  allHtml += '</tbody></table>';
+  document.getElementById('an-allplayers').innerHTML = allHtml;
+}
+
 function esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let toastT=null;
 function showToast(msg,type=''){
